@@ -110,9 +110,14 @@ def displayHexData(data, headpos, start, lines, copyInd, found):
         hexCode = hex(copyInd)[2:]
         if len(hexCode) == 1:
             hexCode = "0" + hexCode
+    
+    hexHeadPos = hex(headpos)[2:]
+    hexHeadPos = "0"*(8-len(hexHeadPos)) + hexHeadPos
+
     finalString += f"""
 
 Copied byte: {hexCode}
+Current Pointer Address: {hexHeadPos}
 
 CONTROLS
 Arrows - move head position
