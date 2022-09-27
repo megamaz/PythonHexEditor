@@ -6,7 +6,8 @@ import getpass
 import keyboard
 from PIL import Image
 
-specialCharacters = [155,127] # TODO add more
+specialCharacters = [155, 127]  # TODO: add more
+
 
 def waitForKeyPress(keys) -> str:
     while 1:
@@ -15,17 +16,20 @@ def waitForKeyPress(keys) -> str:
             if result:
                 return x
 
+
 def waitForKeyRelease(key) -> str:
     while 1:
         result = keyboard.is_pressed(key)
         if not result:
             return key
 
+
 def modifyBytes(index, newValue, array):
     hexData = list(array)
     hexData[index] = newValue
     hexData = bytes(hexData)
     return hexData
+
 
 def displayHexData(data, headpos, start, lines, copyInd, found):
 
@@ -40,12 +44,10 @@ def displayHexData(data, headpos, start, lines, copyInd, found):
     startIndex = (start*16)-(16*lines)
     if startIndex < 0:
         startIndex = 0
-    
 
     endIndex = (start*16)+(16*(lines+1))
     if endIndex > len(hexData):
         endIndex = len(hexData) - 1
-
 
     bytesWritten = startIndex
 
@@ -53,7 +55,7 @@ def displayHexData(data, headpos, start, lines, copyInd, found):
     for b in hexData[startIndex:endIndex]:
 
         highlit = bytesWritten == headpos
-        
+
         dataPrinted = hex(b)[2:]
 
         lineAddress = hex(bytesWritten)[2:]
@@ -85,13 +87,14 @@ def displayHexData(data, headpos, start, lines, copyInd, found):
             before = ""
             end = " "
         finalString += f'{before}{dataPrinted}{end}'
-        
+
         bytesWritten += 1
-        if int(dataPrinted, 16) <= 32 or int(dataPrinted, 16) in specialCharacters:
+        if ((int(dataPrinted, 16) <= 32)
+                or (int(dataPrinted, 16) in specialCharacters)):
             currentLineData.append(".")
         else:
             currentLineData.append(fr"{chr(b)}")
-        
+
         currentLineData[-1] = currentLineData[-1].replace(" ", '')
         currentLineData[-1] = f"{before}{currentLineData[-1]}{end[:-1]}"
 
@@ -99,7 +102,7 @@ def displayHexData(data, headpos, start, lines, copyInd, found):
             finalString += f"| {''.join(currentLineData)}\n"
             currentLineData = []
     if bytesWritten % 16 != 0:
-        finalString += "   " * (16 - (bytesWritten%16))
+        finalString += "   " * (16 - (bytesWritten % 16))
         finalString += f"| {''.join(currentLineData)}"
     finalString += "\n"
 
@@ -110,7 +113,7 @@ def displayHexData(data, headpos, start, lines, copyInd, found):
         hexCode = hex(copyInd)[2:]
         if len(hexCode) == 1:
             hexCode = "0" + hexCode
-    
+
     hexHeadPos = hex(headpos)[2:]
     hexHeadPos = "0"*(8-len(hexHeadPos)) + hexHeadPos
 
@@ -120,23 +123,39 @@ Copied byte: {hexCode}
 Current Pointer Address: {hexHeadPos}
 
 CONTROLS
-Arrows - move head position
-enter  - change highliter byte
+Arrows - Move head position
+enter  - Change highlighted byte
 c      - Copy current byte
-v      - paste copied byte
-i      - view current file as B/W image
-o      - view current file as RGB image
-g      - go to adress
-f      - find (start with 0x to find byte, otherwise find text)"""
-
+v      - Paste copied byte
+i      - View current file as B/W image
+o      - View current file as RGB image
+g      - Go to address
+f      - Find (start with 0x to find byte, otherwise find text)
+q      - Quit"""
     os.system("cls")
 
     print(finalString)
 
     return returnedData
 
-def main(*args):
 
+def main():
+
+    if len(sys.argv) < 2:
+        sys.stdout.write("Specify a file to read.")
+        return 1
+    path = sys.argv[1]
+
+    linesToWrite = 5
+    if len(sys.argv) > 2:
+        try:
+            linesToWrite = int(sys.argv[2])
+        except ValueError:
+            sys.stdout.write("Incorrect number passed.")
+    open_file(path, linesToWrite=linesToWrite)
+
+
+def open_file(path, linesToWrite=5):
     left = "left"
     right = "right"
     up = "up"
@@ -148,6 +167,7 @@ def main(*args):
     RGBImage = "o"
     goto = "g"
     find = "f"
+    quit_program = "q"
 
     copiedContent = None
     foundContent = (None, [None])
@@ -157,33 +177,21 @@ def main(*args):
     # 1 = text
     # 2nd item list(str) content
 
-    # read args
-    if len(args[0]) == 1:
-        sys.stdout.write("Specify a file to read.")
-        exit()
-    
-    linesToWrite = 5
-    if len(args[0]) == 3:
-        try:
-            linesToWrite = int(args[0][2])
-        except ValueError:
-            sys.stdout.write("Incorrect number passed.")
-        
-
-
-    if not os.path.exists(args[0][1]):
+    if not os.path.exists(path):
         raise FileNotFoundError("This file does not exist.")
-    
-    hexData = open(args[0][1], 'rb').read()
-    
-    headpos = 0
-    
-    displayHexData(hexData, 0, 0, linesToWrite, None, foundContent)
 
+    hexData = open(path, 'rb').read()
+
+    headpos = 0
+
+    displayHexData(hexData, 0, 0, linesToWrite, None, foundContent)
 
     while True:
         try:
-            key = waitForKeyPress([left, right, up, down, enter, copy, paste, bwImage, RGBImage, goto, find])
+            wait_release = True
+            key = waitForKeyPress([left, right, up, down, enter,
+                                   copy, paste, bwImage, RGBImage, goto, find,
+                                   quit_program])
             if key == left and headpos != 0:
                 headpos -= 1
             elif key == right and headpos != len(hexData)-2:
@@ -193,7 +201,9 @@ def main(*args):
             elif key == down and headpos <= len(hexData)-17:
                 headpos += 16
             elif key == enter:
-                getpass.getpass("") # otherwise it cancels out of the input for some fucking reason
+                getpass.getpass("")
+                # ^ otherwise it cancels out of the input
+                # TODO: ^ why is this necessary?
                 newHex = input("Enter new Hex value: ")
                 try:
                     hexVal = int(newHex, 16)
@@ -208,7 +218,7 @@ def main(*args):
                     print("You don't have anything copied.")
                 else:
                     hexData = modifyBytes(headpos, int(copiedContent), hexData)
-            
+
             elif key == bwImage:
                 print("Transforming to BW Image...")
                 # find best size. This will be a square.
@@ -226,7 +236,7 @@ def main(*args):
                 if size < 100:
                     bw = bw.resize((size*10, size*10))
                 bw.save(input("Save as: "))
-            
+
             elif key == RGBImage:
                 print("Transforming to RGB Image...")
                 # find best size. This will be a square.
@@ -253,7 +263,7 @@ def main(*args):
 
             elif key == goto:
                 headpos = int(input("New address: "), 16)
-            
+
             elif key == find:
                 wentToResult = False
                 search = input("Search for: ")
@@ -268,14 +278,23 @@ def main(*args):
                     for x in range(len(foundContent[1])):
                         if len(foundContent[1][x]) == 1:
                             foundContent[1][x] = "0" + foundContent[1][x]
-                            
-
-            result = displayHexData(hexData, headpos, int(headpos/16), linesToWrite, copiedContent, foundContent)
+            elif key == quit_program:
+                keyboard.press_and_release("\b")
+                answer = input("Quit? (y/n) ")
+                if answer.lower().strip() in ["y", "yes"]:
+                    raise KeyboardInterrupt
+                wait_release = False
+                keyboard.press_and_release("\n")
+                keyboard.press_and_release("\n")
+                # TODO: ^ \n\n un-freezes the UI (do differently if possible)
+            result = displayHexData(hexData, headpos, int(headpos/16),
+                                    linesToWrite, copiedContent,
+                                    foundContent)
             if result is not None and not wentToResult:
                 wentToResult = True
                 headpos = result
-
-            waitForKeyRelease(key)
+            if wait_release:
+                waitForKeyRelease(key)
 
         except KeyboardInterrupt:
             write = None
@@ -283,15 +302,14 @@ def main(*args):
                 write = input("Write to file? (y/n) ")
                 write = True if write.lower().startswith("y") else False if write.lower().startswith("n") else None
             if write:
-                originalFile = args[0][1]
+                originalFile = path
                 with open(originalFile, 'wb') as writeBytes:
                     writeBytes.write(hexData)
                 sys.stdout.write("Operation complete.\n")
-            
-            quit()
 
+            quit()
 
 
 if __name__ == "__main__":
     time.sleep(0.1)
-    main(sys.argv)
+    sys.exit(main())
