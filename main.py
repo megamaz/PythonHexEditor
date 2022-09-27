@@ -279,8 +279,9 @@ def open_file(path, linesToWrite=5):
                         if len(foundContent[1][x]) == 1:
                             foundContent[1][x] = "0" + foundContent[1][x]
             elif key == quit_program:
+                keyboard.press_and_release("\b")
                 answer = input("Quit? (y/n) ")
-                if answer.lower().strip() in ["y", "yes", "qy", "qyes"]:
+                if answer.lower().strip() in ["y", "yes"]:
                     raise KeyboardInterrupt
                 wait_release = False
                 keyboard.press_and_release("\n")
