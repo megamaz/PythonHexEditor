@@ -285,6 +285,7 @@ def open_file(path, linesToWrite=5):
                 wait_release = False
                 keyboard.press_and_release("\n")
                 keyboard.press_and_release("\n")
+                # TODO: ^ \n\n un-freezes the UI (do differently if possible)
             result = displayHexData(hexData, headpos, int(headpos/16),
                                     linesToWrite, copiedContent,
                                     foundContent)
